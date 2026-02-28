@@ -62,8 +62,8 @@ class UpdateConsumableTest extends TestCase
         $user = User::factory()->createConsumables()->editConsumables()->create();
         $consumable = Consumable::factory()->create(['qty' => 2]);
 
-        $consumable->users()->attach($consumable->id, ['consumable_id' => $consumable->id, 'assigned_to' => $user->id]);
-        $consumable->users()->attach($consumable->id, ['consumable_id' => $consumable->id, 'assigned_to' => $user->id]);
+        \App\Models\ConsumableAssignment::create(['consumable_id' => $consumable->id, 'assigned_to' => $user->id, 'assigned_type' => User::class]);
+        \App\Models\ConsumableAssignment::create(['consumable_id' => $consumable->id, 'assigned_to' => $user->id, 'assigned_type' => User::class]);
 
         $this->assertEquals(2, $consumable->numCheckedOut());
 

@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
+use App\Http\Controllers\CheckInOutRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreConsumableRequest;
 use App\Http\Transformers\ConsumablesTransformer;
 use App\Http\Transformers\SelectlistTransformer;
+use App\Models\Asset;
 use App\Models\Company;
 use App\Models\Consumable;
+use App\Models\ConsumableAssignment;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Requests\ImageUploadRequest;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 
 class ConsumablesController extends Controller
 {
+    use CheckInOutRequest;
     /**
      * Display a listing of the resource.
      *
@@ -29,7 +34,7 @@ class ConsumablesController extends Controller
         $this->authorize('index', Consumable::class);
 
         $consumables = Consumable::with('company', 'location', 'category', 'supplier', 'manufacturer')
-            ->withCount('users as consumables_users_count');
+            ->withCount('consumableAssignments as consumables_users_count');
 
         // This array is what determines which fields should be allowed to be sorted on ON the table itself.
         // These must match a column on the consumables table directly.
@@ -184,7 +189,7 @@ class ConsumablesController extends Controller
     public function show($id) : array
     {
         $this->authorize('view', Consumable::class);
-        $consumable = Consumable::with('users')->findOrFail($id);
+        $consumable = Consumable::with('consumableAssignments')->findOrFail($id);
 
         return (new ConsumablesTransformer)->transformConsumable($consumable);
     }
@@ -241,38 +246,16 @@ class ConsumablesController extends Controller
         $consumable = Consumable::with(['consumableAssignments'=> function ($query) {
             $query->orderBy($query->getModel()->getTable().'.created_at', 'DESC');
         },
-        'consumableAssignments.adminuser'=> function ($query) {
-        },
-        'consumableAssignments.user'=> function ($query) {
-        },
+        'consumableAssignments.adminuser',
+        'consumableAssignments.assignedTo',
         ])->find($consumableId);
 
         if (! Company::isCurrentUserHasAccess($consumable)) {
             return ['total' => 0, 'rows' => []];
         }
         $this->authorize('view', Consumable::class);
-        $rows = [];
 
-        foreach ($consumable->consumableAssignments as $consumable_assignment) {
-            $rows[] = [
-                'avatar' => ($consumable_assignment->user) ? e($consumable_assignment->user->present()->gravatar) : '',
-                'user' => ($consumable_assignment->user) ? [
-                    'id' => (int) $consumable_assignment->user->id,
-                    'name'=> e($consumable_assignment->user->display_name),
-                ] : null,
-                'created_at' => Helper::getFormattedDateObject($consumable_assignment->created_at, 'datetime'),
-                'note' => ($consumable_assignment->note) ? e($consumable_assignment->note) : null,
-                'created_by' => ($consumable_assignment->adminuser) ? [
-                    'id' => (int) $consumable_assignment->adminuser->id,
-                    'name'=> e($consumable_assignment->adminuser->display_name),
-                ] : null,
-            ];
-        }
-
-        $consumableCount = $consumable->users->count();
-        $data = ['total' => $consumableCount, 'rows' => $rows];
-
-        return $data;
+        return (new ConsumablesTransformer)->transformCheckedoutConsumables($consumable->consumableAssignments);
     }
 
     /**
@@ -285,7 +268,7 @@ class ConsumablesController extends Controller
     public function checkout(Request $request, $id) : JsonResponse
     {
         // Check if the consumable exists
-        if (!$consumable = Consumable::with('users')->find($id)) {
+        if (!$consumable = Consumable::find($id)) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/consumables/message.does_not_exist')));
         }
 
@@ -308,31 +291,37 @@ class ConsumablesController extends Controller
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/consumables/message.checkout.unavailable', ['requested' => $consumable->checkout_qty, 'remaining' => $consumable->numRemaining() ])));
         }
 
-
-
-        // Check if the user exists - @TODO:  this should probably be handled via validation, not here??
-        if (!$user = User::find($request->input('assigned_to'))) {
-            // Return error message
-            return response()->json(Helper::formatStandardApiResponse('error', null, 'No user found'));
+        // Backward compatibility: if only assigned_to is provided (no checkout_to_type),
+        // treat it as a user checkout. This preserves existing API behavior.
+        if ($request->filled('assigned_to') && !$request->filled('checkout_to_type')) {
+            $request->merge([
+                'checkout_to_type' => 'user',
+                'assigned_user' => $request->input('assigned_to'),
+            ]);
         }
 
-        // Update the consumable data
-        $consumable->assigned_to = $request->input('assigned_to');
+        // Determine checkout target - supports users and assets
+        try {
+            $target = $this->determineCheckoutTarget();
+        } catch (\Exception $e) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, 'No valid checkout target found'));
+        }
 
         for ($i = 0; $i < $consumable->checkout_qty; $i++) {
-            $consumable->users()->attach($consumable->id,
-                [
-                    'consumable_id' => $consumable->id,
-                    'created_by' => $user->id,
-                    'assigned_to' => $request->input('assigned_to'),
-                    'note' => $request->input('note'),
-                ]
-            );
+            $consumable_assignment = new ConsumableAssignment([
+                'consumable_id' => $consumable->id,
+                'assigned_to' => $target->id,
+                'assigned_type' => $target::class,
+                'note' => $request->input('note'),
+            ]);
+
+            $consumable_assignment->created_by = auth()->id();
+            $consumable_assignment->save();
         }
 
         event(new CheckoutableCheckedOut(
             $consumable,
-            $user,
+            $target,
             auth()->user(),
             $request->input('note'),
             [],

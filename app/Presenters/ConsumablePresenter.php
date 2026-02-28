@@ -190,22 +190,23 @@ class ConsumablePresenter extends Presenter
     public static function checkedOut()
     {
         $layout = [
-
             [
-                'field' => 'avatar',
+                'field' => 'assigned_to.image',
                 'searchable' => false,
                 'sortable' => false,
+                'switchable' => true,
                 'title' => trans('general.image'),
                 'visible' => true,
                 'formatter' => 'imageFormatter',
             ],
             [
-                'field' => 'user',
+                'field' => 'assigned_to',
                 'searchable' => false,
                 'sortable' => false,
-                'title' => trans('general.name'),
+                'switchable' => true,
+                'title' => trans('general.checked_out_to'),
                 'visible' => true,
-                'formatter' => 'usersLinkObjFormatter',
+                'formatter' => 'polymorphicItemFormatter',
             ],
             [
                 'field' => 'created_at',
@@ -215,7 +216,6 @@ class ConsumablePresenter extends Presenter
                 'visible' => true,
                 'formatter' => 'dateDisplayFormatter',
             ],
-
             [
                 'field' => 'note',
                 'searchable' => false,
@@ -223,7 +223,6 @@ class ConsumablePresenter extends Presenter
                 'title' => trans('general.notes'),
                 'visible' => true,
             ],
-
             [
                 'field' => 'created_by',
                 'searchable' => false,
@@ -232,8 +231,6 @@ class ConsumablePresenter extends Presenter
                 'visible' => true,
                 'formatter' => 'usersLinkObjFormatter',
             ],
-
-
         ];
 
         return json_encode($layout);

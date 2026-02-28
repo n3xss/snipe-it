@@ -4,17 +4,22 @@ namespace App\Http\Controllers\Consumables;
 
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
+use App\Http\Controllers\CheckInOutRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Consumable;
+use App\Models\ConsumableAssignment;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use \Illuminate\Contracts\View\View;
 use \Illuminate\Http\RedirectResponse;
 
 class ConsumableCheckoutController extends Controller
 {
+    use CheckInOutRequest;
+
     /**
-     * Return a view to checkout a consumable to a user.
+     * Return a view to checkout a consumable to a user or asset.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @see ConsumableCheckoutController::store() method that stores the data.
@@ -63,7 +68,7 @@ class ConsumableCheckoutController extends Controller
      */
     public function store(Request $request, $consumableId)
     {
-        if (is_null($consumable = Consumable::with('users')->find($consumableId))) {
+        if (is_null($consumable = Consumable::find($consumableId))) {
             return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.not_found'));
         }
 
@@ -80,40 +85,48 @@ class ConsumableCheckoutController extends Controller
             return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.checkout.unavailable', ['requested' => $quantity, 'remaining' => $consumable->numRemaining() ]));
         }
 
-        $admin_user = auth()->user();
-        $assigned_to = e($request->input('assigned_to'));
+        // Backward compatibility: if only assigned_to is provided (no checkout_to_type),
+        // treat it as a user checkout
+        if ($request->filled('assigned_to') && !$request->filled('checkout_to_type')) {
+            $request->merge([
+                'checkout_to_type' => 'user',
+                'assigned_user' => $request->input('assigned_to'),
+            ]);
+        }
 
-        // Check if the user exists
-        if (is_null($user = User::find($assigned_to))) {
-            // Redirect to the consumable management page with error
+        try {
+            $target = $this->determineCheckoutTarget();
+        } catch (\Exception $e) {
             return redirect()->route('consumables.checkout.show', $consumable)->with('error', trans('admin/consumables/message.checkout.user_does_not_exist'))->withInput();
         }
 
-        // Update the consumable data
-        $consumable->assigned_to = e($request->input('assigned_to'));
+        session()->put(['checkout_to_type' => $target]);
 
-        for ($i = 0; $i < $quantity; $i++){
-        $consumable->users()->attach($consumable->id, [
-            'consumable_id' => $consumable->id,
-            'created_by' => $admin_user->id,
-            'assigned_to' => e($request->input('assigned_to')),
-            'note' => $request->input('note'),
-        ]);
+        for ($i = 0; $i < $quantity; $i++) {
+            $consumable_assignment = new ConsumableAssignment([
+                'consumable_id' => $consumable->id,
+                'assigned_to' => $target->id,
+                'assigned_type' => $target::class,
+                'note' => $request->input('note'),
+            ]);
+
+            $consumable_assignment->created_by = auth()->id();
+            $consumable_assignment->save();
         }
 
         $consumable->checkout_qty = $quantity;
 
         event(new CheckoutableCheckedOut(
             $consumable,
-            $user,
+            $target,
             auth()->user(),
             $request->input('note'),
             [],
             $consumable->checkout_qty,
         ));
 
-        $request->request->add(['checkout_to_type' => 'user']);
-        $request->request->add(['assigned_user' => $user->id]);
+        $request->request->add(['checkout_to_type' => request('checkout_to_type')]);
+        $request->request->add(['assigned_to' => $target->id]);
 
         session()->put(['redirect_option' => $request->input('redirect_option'), 'checkout_to_type' => $request->input('checkout_to_type')]);
 
