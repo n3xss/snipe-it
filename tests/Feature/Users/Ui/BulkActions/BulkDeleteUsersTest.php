@@ -274,9 +274,10 @@ class BulkDeleteUsersTest extends TestCase
     private function attachConsumableToUsers(Consumable $consumable, array $users): void
     {
         foreach ($users as $user) {
-            $consumable->users()->attach($consumable->id, [
+            \App\Models\ConsumableAssignment::create([
                 'consumable_id' => $consumable->id,
                 'assigned_to' => $user->id,
+                'assigned_type' => User::class,
             ]);
         }
     }

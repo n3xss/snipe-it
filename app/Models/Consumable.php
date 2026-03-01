@@ -303,7 +303,7 @@ class Consumable extends SnipeModel
      */
     public function numCheckedOut()
     {
-        return $this->consumables_users_count ?? $this->users()->count();
+        return $this->consumables_users_count ?? $this->consumableAssignments()->count();
     }
 
     /**

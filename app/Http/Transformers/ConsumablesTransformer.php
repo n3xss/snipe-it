@@ -87,13 +87,38 @@ class ConsumablesTransformer
         return $array;
     }
 
-    public function transformCheckedoutConsumables(Collection $consumables_users, $total)
+    public function transformCheckedoutConsumables($consumable_assignments)
     {
         $array = [];
-        foreach ($consumables_users as $user) {
-            $array[] = (new UsersTransformer)->transformUser($user);
+
+        foreach ($consumable_assignments as $assignment) {
+            $array[] = [
+                'id' => $assignment->id,
+                'assigned_to' => $this->transformAssignedTo($assignment),
+                'note' => $assignment->note ? e($assignment->note) : null,
+                'created_by' => $assignment->adminuser ? [
+                    'id' => (int) $assignment->adminuser->id,
+                    'name' => e($assignment->adminuser->present()->fullName),
+                ] : null,
+                'created_at' => Helper::getFormattedDateObject($assignment->created_at, 'datetime'),
+            ];
         }
 
-        return (new DatatablesTransformer)->transformDatatables($array, $total);
+        return ['total' => count($array), 'rows' => $array];
+    }
+
+    public function transformAssignedTo($consumableAssignment)
+    {
+        if (is_null($consumableAssignment->assignedTo)) {
+            return null;
+        }
+
+        if ($consumableAssignment->checkedOutToUser()) {
+            return (new UsersTransformer)->transformUserCompact($consumableAssignment->assignedTo);
+        } elseif ($consumableAssignment->checkedOutToAsset()) {
+            return (new AssetsTransformer())->transformAssetCompact($consumableAssignment->assignedTo);
+        }
+
+        return null;
     }
 }

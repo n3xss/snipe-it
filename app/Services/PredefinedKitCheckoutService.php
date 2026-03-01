@@ -167,12 +167,14 @@ class PredefinedKitCheckoutService
                 }
                 // consumables
                 foreach ($consumables_to_add as $consumable) {
-                    $consumable->assigned_to = $user->id;
-                    $consumable->users()->attach($consumable->id, [
+                    $consumable_assignment = new \App\Models\ConsumableAssignment([
                         'consumable_id' => $consumable->id,
-                        'user_id' => $admin->id,
                         'assigned_to' => $user->id,
+                        'assigned_type' => \App\Models\User::class,
+                        'note' => $note,
                     ]);
+                    $consumable_assignment->created_by = $admin->id;
+                    $consumable_assignment->save();
                     event(new CheckoutableCheckedOut($consumable, $user, $admin, $note));
                 }
                 //accessories

@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Consumable;
+use App\Models\ConsumableAssignment;
 use App\Models\Manufacturer;
 use App\Models\User;
 use Carbon\Carbon;
@@ -102,12 +103,14 @@ class ConsumableFactory extends Factory
         })->afterCreating(function (Consumable $consumable) {
             $user = User::factory()->create();
 
-            $consumable->users()->attach($consumable->id, [
+            $assignment = new ConsumableAssignment([
                 'consumable_id' => $consumable->id,
-                'created_by' => $user->id,
                 'assigned_to' => $user->id,
+                'assigned_type' => User::class,
                 'note' => '',
             ]);
+            $assignment->created_by = $user->id;
+            $assignment->save();
         });
     }
 
@@ -121,12 +124,13 @@ class ConsumableFactory extends Factory
     public function checkedOutToUser(User $user = null)
     {
         return $this->afterCreating(function (Consumable $consumable) use ($user) {
-            $consumable->users()->attach($consumable->id, [
+            $assignment = new ConsumableAssignment([
                 'consumable_id' => $consumable->id,
-                'created_at' => Carbon::now(),
-                'created_by' => User::factory()->create()->id,
                 'assigned_to' => $user->id ?? User::factory()->create()->id,
+                'assigned_type' => User::class,
             ]);
+            $assignment->created_by = User::factory()->create()->id;
+            $assignment->save();
         });
     }
 }
