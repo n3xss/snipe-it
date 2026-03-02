@@ -14,9 +14,11 @@ use App\Http\Transformers\AssetsTransformer;
 use App\Http\Transformers\ComponentsTransformer;
 use App\Http\Transformers\LicensesTransformer;
 use App\Http\Transformers\SelectlistTransformer;
+use App\Http\Transformers\ConsumablesTransformer;
 use App\Models\AccessoryCheckout;
 use App\Models\Actionlog;
 use App\Models\Asset;
+use App\Models\ConsumableAssignment;
 use App\Models\AssetModel;
 use App\Models\CheckoutAcceptance;
 use App\Models\Company;
@@ -1367,6 +1369,25 @@ class AssetsController extends Controller
         $components = $asset->load(['components' => fn($query) => $query->applyOffsetAndLimit($total)])->components;
 
         return (new ComponentsTransformer)->transformComponents($components, $total);
+    }
+
+    public function assignedConsumables(Request $request, Asset $asset): JsonResponse|array
+    {
+        $this->authorize('view', Asset::class);
+        $this->authorize('view', $asset);
+
+        $consumable_assignments = ConsumableAssignment::AssetsAssigned()
+            ->where('assigned_to', $asset->id)
+            ->with('adminuser')
+            ->with('consumable');
+
+        $offset = ($request->input('offset') > $consumable_assignments->count()) ? $consumable_assignments->count() : app('api_offset_value');
+        $limit = app('api_limit_value');
+
+        $total = $consumable_assignments->count();
+        $consumable_assignments = $consumable_assignments->skip($offset)->take($limit)->get();
+
+        return (new ConsumablesTransformer)->transformCheckedoutConsumablesForAsset($consumable_assignments, $total);
     }
 
     /**

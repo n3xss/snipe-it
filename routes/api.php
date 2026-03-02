@@ -578,6 +578,13 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'api-throttle:api']], fu
                   'assignedComponents'
               ]
           )->name('api.assets.assigned_components');
+
+          Route::get('{asset}/assigned/consumables',
+              [
+                  Api\AssetsController::class,
+                  'assignedConsumables'
+              ]
+          )->name('api.assets.assigned_consumables');
           /** End assigned routes */
 
       });

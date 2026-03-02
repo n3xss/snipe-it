@@ -114,6 +114,20 @@
                         </li>
                     @endif
 
+                    @if ($asset->assignedConsumables->count() > 0)
+                        <li>
+                            <a href="#consumables_assigned" data-toggle="tab" data-tooltip="true">
+                                <span class="hidden-lg hidden-md">
+                                    <x-icon type="consumables" class="fa-2x" />
+                                </span>
+                                <span class="hidden-xs hidden-sm">
+                                    {{ trans('general.consumables') }}
+                                </span>
+                                {!! ($asset->assignedConsumables()->count() > 0 ) ? '<span class="badge badge-secondary">'.number_format($asset->assignedConsumables()->count()).'</span>' : '' !!}
+                            </a>
+                        </li>
+                    @endif
+
 
                     @if ($asset->audits->count() > 0)
                     <li>
@@ -1314,6 +1328,29 @@
                                     data-url="{{ route('api.assets.assigned_accessories', ['asset' => $asset]) }}"
                                     data-export-options='{
                                   "fileName": "export-locations-{{ str_slug($asset->name) }}-accessories-{{ date('Y-m-d') }}",
+                                  "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
+                                  }'>
+                            </table>
+
+                    </div><!-- /.tab-pane -->
+
+                    <div class="tab-pane" id="consumables_assigned">
+
+                            <h2 class="box-title" style="float:left">
+                                {{ trans('general.consumables') }}
+                            </h2>
+
+                            <table
+                                    data-columns="{{ \App\Presenters\AssetPresenter::assignedConsumablesDataTableLayout() }}"
+                                    data-cookie-id-table="consumablesAssignedListingTable"
+                                    data-id-table="consumablesAssignedListingTable"
+                                    data-side-pagination="server"
+                                    data-sort-order="asc"
+                                    id="consumablesAssignedListingTable"
+                                    class="table table-striped snipe-table"
+                                    data-url="{{ route('api.assets.assigned_consumables', ['asset' => $asset]) }}"
+                                    data-export-options='{
+                                  "fileName": "export-{{ str_slug($asset->name) }}-consumables-{{ date('Y-m-d') }}",
                                   "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
                                   }'>
                             </table>

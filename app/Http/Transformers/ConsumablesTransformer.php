@@ -4,6 +4,7 @@ namespace App\Http\Transformers;
 
 use App\Helpers\Helper;
 use App\Models\Consumable;
+use App\Models\ConsumableAssignment;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -105,6 +106,45 @@ class ConsumablesTransformer
         }
 
         return ['total' => count($array), 'rows' => $array];
+    }
+
+    public function transformCheckedoutConsumablesForAsset($consumable_assignments, $total)
+    {
+        $array = [];
+
+        foreach ($consumable_assignments as $assignment) {
+            $array[] = self::transformCheckedoutConsumableForAsset($assignment);
+        }
+
+        return (new DatatablesTransformer)->transformDatatables($array, $total);
+    }
+
+    public function transformCheckedoutConsumableForAsset(ConsumableAssignment $assignment)
+    {
+        if ($assignment->consumable) {
+            $array = [
+                'id' => $assignment->id,
+                'consumable' => [
+                    'id' => $assignment->consumable->id,
+                    'name' => $assignment->consumable->name,
+                ],
+                'image' => ($assignment->consumable->image) ? Storage::disk('public')->url('consumables/' . e($assignment->consumable->image)) : null,
+                'note' => $assignment->note ? e($assignment->note) : null,
+                'created_by' => $assignment->adminuser ? [
+                    'id' => (int) $assignment->adminuser->id,
+                    'name' => e($assignment->adminuser->present()->fullName),
+                ] : null,
+                'created_at' => Helper::getFormattedDateObject($assignment->created_at, 'datetime'),
+            ];
+
+            $permissions_array['available_actions'] = [
+                'checkout' => false,
+                'checkin' => Gate::allows('checkin', Consumable::class),
+            ];
+
+            $array += $permissions_array;
+            return $array;
+        }
     }
 
     public function transformAssignedTo($consumableAssignment)
