@@ -34,7 +34,7 @@
 
                     <x-slot:tabpanes>
 
-                        <!-- start history tab pane -->
+                        <!-- start assigned tab pane -->
                         <x-tabs.pane name="assigned" class="in active">
                             <x-slot:header>
                                 {{ trans('general.checked_out') }}
@@ -47,7 +47,7 @@
                                 />
                             </x-slot:content>
                         </x-tabs.pane>
-                        <!-- end history tab pane -->
+                        <!-- end assigned tab pane -->
 
                         <!-- start history tab pane -->
                         <x-tabs.pane name="history">
