@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Traits\Acceptable;
 use App\Models\Traits\CompanyableChildTrait;
 use App\Models\Traits\Loggable;
+use App\Models\Traits\Searchable;
 use App\Notifications\CheckinLicenseNotification;
 use App\Notifications\CheckoutLicenseNotification;
 use App\Presenters\Presentable;
@@ -14,13 +15,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LicenseSeat extends SnipeModel implements ICompanyableChild
 {
+    use Acceptable;
     use CompanyableChildTrait;
     use HasFactory;
     use Loggable;
+    use Presentable;
+    use Searchable;
     use SoftDeletes;
 
     protected $presenter = \App\Presenters\LicenseSeatPresenter::class;
-    use Presentable;
 
     protected $guarded = 'id';
     protected $table = 'license_seats';
@@ -39,7 +42,25 @@ class LicenseSeat extends SnipeModel implements ICompanyableChild
         'notes',
     ];
 
-    use Acceptable;
+    /**
+     * The attributes that should be included when searching the model.
+     *
+     * @var array
+     */
+    protected $searchableAttributes = [
+        'notes',
+    ];
+
+    /**
+     * The relations and their attributes that should be included when searching the model.
+     *
+     * @var array
+     */
+    protected $searchableRelations = [
+        'user' => ['first_name', 'last_name', 'display_name', 'username', 'email'],
+        'asset' => ['name', 'asset_tag'],
+    ];
+
 
     public function getCompanyableParents()
     {

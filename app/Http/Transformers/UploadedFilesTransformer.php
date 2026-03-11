@@ -41,7 +41,7 @@ class UploadedFilesTransformer
             'note' =>  ($file->note) ? e($file->note) : null,
             'created_by' => ($file->adminuser) ? [
                 'id' => (int) $file->adminuser->id,
-                'name'=> e($file->adminuser->present()->fullName),
+                'name'=> e($file->adminuser->display_name),
             ] : null,
             'created_at' => Helper::getFormattedDateObject($file->created_at, 'datetime'),
             'deleted_at' => Helper::getFormattedDateObject($file->deleted_at, 'datetime'),

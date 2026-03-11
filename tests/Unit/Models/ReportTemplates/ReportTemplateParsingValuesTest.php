@@ -4,6 +4,7 @@ namespace Tests\Unit\Models\ReportTemplates;
 
 use App\Models\Department;
 use App\Models\Location;
+use App\Models\User;
 use App\Models\ReportTemplate;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;

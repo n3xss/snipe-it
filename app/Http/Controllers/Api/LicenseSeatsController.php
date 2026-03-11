@@ -37,6 +37,9 @@ class LicenseSeatsController extends Controller
                 $seats->ByAssigned();
             }
 
+            if ($request->filled('search')) {
+                $seats->TextSearch($request->input('search'));
+            }
 
             $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
 

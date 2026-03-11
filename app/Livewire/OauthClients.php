@@ -84,7 +84,7 @@ class OauthClients extends Component
         ]);
 
         $client = app(ClientRepository::class)->find($editClientId->id);
-        if ($client->created_by == auth()->id()) {
+        if ($client->user_id == auth()->id()) {
             $client->name = $this->editName;
             $client->redirect = $this->editRedirect;
             $client->save();

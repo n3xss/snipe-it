@@ -10,7 +10,7 @@ class DepreciationsIndexTest extends TestCase
     public function testViewingDepreciationIndexRequiresPermission()
     {
         $this->actingAsForApi(User::factory()->create())
-            ->getJson(route('api.departments.index'))
+            ->getJson(route('api.depreciations.index'))
             ->assertForbidden();
     }
 

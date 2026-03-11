@@ -111,11 +111,11 @@ class AssetModelsTransformer
         $array = [
             'id' => (int) $file->id,
             'filename' => e($file->filename),
-            'note' => $file->note,
+            'note' => $file->note ? e($file->note) : null,
             'url' => route('show/modelfile', [$assetmodel->id, $file->id]),
             'created_by' => ($file->adminuser) ? [
                 'id' => (int) $file->adminuser->id,
-                'name'=> e($file->adminuser->present()->fullName),
+                'name'=> e($file->adminuser->display_name),
             ] : null,
             'created_at' => Helper::getFormattedDateObject($file->created_at, 'datetime'),
             'updated_at' => Helper::getFormattedDateObject($file->updated_at, 'datetime'),

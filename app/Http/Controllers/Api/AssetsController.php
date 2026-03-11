@@ -1151,7 +1151,7 @@ class AssetsController extends Controller
                 'id' => $asset->id,
                 'asset_tag' => $asset->asset_tag,
                 'note' => e($request->input('note')),
-                'status_label' => e($asset->assetstatus->display_name),
+                'status_label' => e($asset->assetstatus?->display_name),
                 'status_type' => $asset->assetstatus->getStatuslabelType(),
                 'next_audit_date' => Helper::getFormattedDateObject($asset->next_audit_date),
             ];

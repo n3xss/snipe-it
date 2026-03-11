@@ -41,7 +41,7 @@ class CheckinCheckoutCounters extends TestCase
             ])->assertOk()
             ->assertStatusMessageIs('success')
             ->json();
-        \Log::error(print_r($response, true));
+
 
         //check the counters
         $asset = Asset::find($response['payload']['id']);

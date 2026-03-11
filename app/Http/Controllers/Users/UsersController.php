@@ -122,9 +122,22 @@ class UsersController extends Controller
         // Strip out the superuser permission if the user isn't a superadmin
         $permissions_array = $request->input('permission');
 
-        if (! auth()->user()->isSuperUser()) {
-            unset($permissions_array['superuser']);
+        // Strip out the individual superuser permission if the API user isn't a superadmin
+        if (!auth()->user()->isSuperUser()) {
+
+            if ((is_array($permissions_array)) && (array_key_exists('superuser', $permissions_array))) {
+                unset($permissions_array['superuser']);
+            }
         }
+
+        // Strip out the individual admin permission if the API user isn't an admin
+        if (!auth()->user()->isAdmin()) {
+
+            if ((is_array($permissions_array)) && (array_key_exists('admin', $permissions_array))) {
+                unset($permissions_array['admin']);
+            }
+        }
+
         $user->permissions = json_encode($permissions_array);
 
         // we have to invoke the form request here to handle image uploads

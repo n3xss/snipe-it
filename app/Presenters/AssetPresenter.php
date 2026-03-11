@@ -23,6 +23,7 @@ class AssetPresenter extends Presenter
                 'checkbox' => true,
                 'titleTooltip' => trans('general.select_all_none'),
                 'printIgnore' => true,
+                'class' => 'hidden-print'
             ], [
                 'field' => 'id',
                 'searchable' => false,
@@ -358,6 +359,7 @@ class AssetPresenter extends Presenter
             'visible' => true,
             'formatter' => 'hardwareInOutFormatter',
             'printIgnore' => true,
+            'class' => 'hidden-print',
         ];
 
         $layout[] = [
@@ -368,6 +370,7 @@ class AssetPresenter extends Presenter
             'title' => trans('table.actions'),
             'formatter' => 'hardwareActionsFormatter',
             'printIgnore' => true,
+            'class' => 'hidden-print',
         ];
 
         return json_encode($layout);

@@ -20,7 +20,7 @@ trait CompanyableTrait
         if (__CLASS__ != 'App\Models\Location') {
             static::addGlobalScope(new CompanyableScope);
         } else {
-            if (Setting::getSettings()->scope_locations_fmcs == 1) {
+            if (Setting::getSettings()?->scope_locations_fmcs == 1) {
                 static::addGlobalScope(new CompanyableScope);
             }
         }

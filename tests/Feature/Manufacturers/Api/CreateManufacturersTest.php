@@ -10,10 +10,10 @@ class CreateManufacturersTest extends TestCase
 {
 
 
-    public function testRequiresPermissionToCreateDepartment()
+    public function testRequiresPermissionToCreateManufacturer()
     {
         $this->actingAsForApi(User::factory()->create())
-            ->postJson(route('api.departments.store'))
+            ->postJson(route('api.manufacturers.store'))
             ->assertForbidden();
     }
 

@@ -18,7 +18,7 @@ class IndexDepartmentsTest extends TestCase
     public function testPageRenders()
     {
         $this->actingAs(User::factory()->superuser()->create())
-            ->get(route('components.index'))
+            ->get(route('departments.index'))
             ->assertOk();
     }
 

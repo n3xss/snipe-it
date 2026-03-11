@@ -12,7 +12,7 @@ class CreateLocationsTest extends TestCase
     public function testRequiresPermissionToCreateLocation()
     {
         $this->actingAsForApi(User::factory()->create())
-            ->postJson(route('api.departments.store'))
+            ->postJson(route('api.locations.store'))
             ->assertForbidden();
     }
 
@@ -31,9 +31,9 @@ class CreateLocationsTest extends TestCase
 
         $this->assertTrue(Location::where('name', 'Test Location')->exists());
 
-        $department = Location::find($response['payload']['id']);
-        $this->assertEquals('Test Location', $department->name);
-        $this->assertEquals('Test Note', $department->notes);
+        $location = Location::find($response['payload']['id']);
+        $this->assertEquals('Test Location', $location->name);
+        $this->assertEquals('Test Note', $location->notes);
     }
 
     public function testCannotCreateNewLocationsWithTheSameName()

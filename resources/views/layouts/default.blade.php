@@ -41,6 +41,7 @@
 
     <style>
 
+
         :root {
             color-scheme: light dark;
             --btn-theme-hover-text-color: {{ $nav_link_color ?? 'light-dark(hsl(from var(--main-theme-color) h s calc(l - 10)),hsl(from var(--main-theme-color) h s calc(l - 10)))' }};
@@ -949,6 +950,61 @@
         .bootstrap-table .fixed-table-container .table tbody tr.selected td {
             background-color: light-dark(hsl(from var(--main-theme-color) h s calc(l + 40)),hsl(from var(--main-theme-color) h s calc(l - 40))) !important;
         }
+
+        tr.success > td {
+            background-color: #00a65a !important;
+            color: white !important;
+        }
+
+        tr.danger > td {
+            background-color: var(--text-danger) !important;
+            color: white !important;
+        }
+
+        @media print {
+
+            body,
+            div.content-wrapper,
+            section.content,
+            .webui,
+            .main-panel,
+            .nav-tabs-custom,
+            .box,
+            .box-body,
+            .list-group,
+            .list-group-unbordered,
+            .list-group-item,
+            .row,
+            .tab-content
+            {
+                background: white !important;
+                color: black !important;
+            }
+            .fixed-table-toolbar,
+            .fixed-table-pagination,
+            #assetsToolBar,
+            .fixed-table-pagination
+            {
+                display: none !important;
+            }
+            .tab-pane.hidden-print {
+                display: none !important;
+                visibility: hidden !important;
+            }
+
+            h2, h3, h4 {
+                color: black !important;
+            }
+
+            .col-sm-9,
+            .main-panel
+            {
+                float: left;
+                width: 100% !important;
+            }
+
+        }
+
     </style>
 
     {{-- Custom CSS --}}
@@ -1021,6 +1077,16 @@
                     <!-- Navbar Right Menu -->
                     <div class="navbar-custom-menu">
                         <ul class="nav navbar-nav">
+                            <li aria-hidden="true">
+
+                                    <a href="#" class="sidebar-toggle-mobile visible-xs hidden-lg hidden-md" data-toggle="push-menu"
+                                   role="button">
+                                    <span class="sr-only">{{ trans('general.toggle_navigation') }}</span>
+                                    <x-icon type="nav-toggle" />
+                                </a>
+
+                            </li>
+
                             @can('index', \App\Models\Asset::class)
                                 <li aria-hidden="true"{!! (request()->is('hardware*') ? ' class="active"' : '') !!}>
                                     <a href="{{ url('hardware') }}" {{$snipeSettings->shortcuts_enabled == 1 ? "accesskey=1" : ''}} tabindex="-1" data-tooltip="true" data-placement="bottom" data-title="{{ trans('general.assets') }}">
@@ -1064,23 +1130,20 @@
 
                             @can('index', \App\Models\Asset::class)
                                 <li>
-                                    <form class="navbar-form navbar-left form-horizontal" role="search"
-                                          action="{{ route('findbytag/hardware') }}" method="get">
-                                        <div class="col-xs-12 col-md-12">
-                                            <div class="col-xs-12 form-group">
-                                                <label class="sr-only" for="tagSearch">
-                                                    {{ trans('general.lookup_by_tag') }}
-                                                </label>
-                                                <input type="text" class="form-control" id="tagSearch" name="assetTag" placeholder="{{ trans('general.lookup_by_tag') }}">
-                                                <input type="hidden" name="topsearch" value="true" id="search">
-                                            </div>
-                                            <div class="col-xs-1">
-                                                <button type="submit" id="topSearchButton" class="btn btn-theme pull-right">
-                                                    <x-icon type="search" />
-                                                    <span class="sr-only">{{ trans('general.search') }}</span>
-                                                </button>
-                                            </div>
-                                        </div>
+                                    <form class="navbar-form navbar-left form-inline" role="search" action="{{ route('findbytag/hardware') }}" method="get">
+
+                                                <div class="input-group col-xs-12" style="border: 0 !important;">
+                                                    <label class="sr-only" for="tagSearch">
+                                                        {{ trans('general.lookup_by_tag') }}
+                                                    </label>
+                                                    <input type="text" class="form-control" id="tagSearch" name="assetTag" placeholder="{{ trans('general.lookup_by_tag') }}">
+                                                    <span class="input-group-btn">
+                                                        <button type="submit" id="topSearchButton" class="btn btn-sm btn-theme" style="padding: 7px 10px 7px 10px; "><x-icon type="search" class="fa-fw" /><div class="sr-only">{{ trans('general.search') }}</div></button>
+                                                    </span>
+                                                </div>
+
+                                        <input type="hidden" name="topsearch" value="true" id="search">
+
                                     </form>
                                 </li>
                             @endcan
@@ -1140,6 +1203,8 @@
                                                 </a>
                                             </li>
                                         @endcan
+
+
                                     </ul>
                                 </li>
                             @endcan
@@ -1255,11 +1320,7 @@
                         </ul>
                     </div>
                 </nav>
-                <a href="#" style="float:left" class="sidebar-toggle-mobile visible-xs btn" data-toggle="push-menu"
-                   role="button">
-                    <span class="sr-only">{{ trans('general.toggle_navigation') }}</span>
-                    <x-icon type="nav-toggle" />
-                </a>
+
                 <!-- Sidebar toggle button-->
             </header>
 
@@ -2154,27 +2215,54 @@
                  }
              }
 
-            $(function () {
 
+
+
+            function checkInfoSidePanel() {
+                var side_panel_state = localStorage.getItem("side_panel_state");
+
+                // Open side info panel
+                if (side_panel_state == 'collapsed') {
+                    collapseInfoSidePanel();
+
+                // Collapse side info panel
+                } else {
+                    expandInfoSidePanel();
+                }
+
+            }
+
+            function toggleInfoSidePanel() {
+                var side_panel_state = localStorage.getItem("side_panel_state");
+
+                if (side_panel_state == 'expanded') {
+                    localStorage.setItem("side_panel_state", 'collapsed');
+                } else {
+                    localStorage.setItem("side_panel_state", 'expanded');
+                }
+
+                checkInfoSidePanel();
+            }
+
+            function collapseInfoSidePanel() {
+                $('.side-box').removeClass('expanded').hide();
+                $('.main-panel').removeClass('col-md-9').addClass('col-md-12');
+                $("#expand-info-panel-button").addClass('fa-square-caret-left').removeClass('fa-square-caret-right');
+            }
+
+            function expandInfoSidePanel() {
+                $('.side-box').fadeIn("fast").addClass('expanded');
+                $('.main-panel').removeClass('col-md-12').addClass('col-md-9');
+                $("#expand-info-panel-button").addClass('fa-square-caret-right').removeClass('fa-square-caret-left');
+            }
+
+
+            $(document).ready(function () {
+                checkInfoSidePanel();
 
                 // Handle the info-panel
                 $("#expand-info-panel-button").click(function () {
-
-                    $('.side-box').parent('div').parent('div').parent('div').hide();
-                    $(window).on('load', function() {
-                        $('.side-box').parent('div').parent('div').parent('div').show();
-                    });
-
-                    if($('.side-box').hasClass('expanded')) {
-                        $('.main-panel').removeClass('col-md-9').addClass('col-md-12');
-                        $('.side-box').removeClass('expanded');
-                        $("#expand-info-panel-button").addClass('fa-square-caret-left').removeClass('fa-square-caret-right');
-                    } else {
-                        $('.side-box').parent('div').parent('div').parent('div').fadeToggle("fast")
-                        $('.side-box').addClass('expanded');
-                        $('.main-panel').removeClass('col-md-12').addClass('col-md-9');
-                        $("#expand-info-panel-button").addClass('fa-square-caret-right').removeClass('fa-square-caret-left');
-                    }
+                    toggleInfoSidePanel();
                 });
 
 

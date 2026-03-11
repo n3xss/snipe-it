@@ -28,11 +28,11 @@ class UpdateManufacturersTest extends TestCase
 
     public function testUserCanEditManufacturers()
     {
-        $department = Manufacturer::factory()->create(['name' => 'Test Manufacturer']);
+        $manufacturer = Manufacturer::factory()->create(['name' => 'Test Manufacturer']);
         $this->assertTrue(Manufacturer::where('name', 'Test Manufacturer')->exists());
 
         $response = $this->actingAs(User::factory()->superuser()->create())
-            ->put(route('manufacturers.update', ['manufacturer' => $department]), [
+            ->put(route('manufacturers.update', ['manufacturer' => $manufacturer]), [
                 'name' => 'Test Manufacturer Edited',
                 'notes' => 'Test Note Edited',
             ])

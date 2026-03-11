@@ -322,14 +322,14 @@ class AssetsTransformer
                 'id' => $accessory_checkout->id,
                 'accessory' => [
                     'id' => $accessory_checkout->accessory->id,
-                    'name' => $accessory_checkout->accessory->name,
+                    'name' => e($accessory_checkout->accessory->display_name),
                 ],
                 'assigned_to' => $accessory_checkout->assigned_to,
                 'image' => ($accessory_checkout->accessory->image) ? Storage::disk('public')->url('accessories/' . e($accessory_checkout->accessory->image)) : null,
                 'note' => $accessory_checkout->note ? e($accessory_checkout->note) : null,
                 'created_by' => $accessory_checkout->adminuser ? [
                     'id' => (int)$accessory_checkout->adminuser->id,
-                    'name' => e($accessory_checkout->adminuser->present()->fullName),
+                    'name' => e($accessory_checkout->display_name),
                 ] : null,
                 'created_at' => Helper::getFormattedDateObject($accessory_checkout->created_at, 'datetime'),
                 'deleted_at' => Helper::getFormattedDateObject($accessory_checkout->deleted_at, 'datetime'),

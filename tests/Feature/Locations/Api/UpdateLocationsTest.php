@@ -8,11 +8,10 @@ use Tests\TestCase;
 
 class UpdateLocationsTest extends TestCase
 {
-
     public function testRequiresPermissionToEditLocation()
     {
         $this->actingAsForApi(User::factory()->create())
-            ->postJson(route('api.locations.store', Location::factory()->create()))
+            ->patchJson(route('api.locations.update', Location::factory()->create()))
             ->assertForbidden();
     }
 
@@ -33,8 +32,5 @@ class UpdateLocationsTest extends TestCase
         $location->refresh();
         $this->assertEquals('Test Updated Location', $location->name, 'Name was not updated');
         $this->assertEquals('Test Updated Note', $location->notes, 'Note was not updated');
-
     }
-
-    
 }

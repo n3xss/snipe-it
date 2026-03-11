@@ -10,7 +10,7 @@ use Tests\TestCase;
 
 class CreateLicenseTest extends TestCase
 {
-    public function testPermissionRequiredToViewLicense()
+    public function testPermissionRequiredToCreateLicense()
     {
         $license = License::factory()->create();
         $this->actingAs(User::factory()->create())

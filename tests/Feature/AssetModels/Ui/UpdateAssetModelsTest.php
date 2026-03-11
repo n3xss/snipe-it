@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class UpdateAssetModelsTest extends TestCase
 {
-    public function testPermissionRequiredToStoreAssetModel()
+    public function testPermissionRequiredToUpdateAssetModel()
     {
         $this->actingAs(User::factory()->create())
             ->put(route('models.update', ['model' => AssetModel::factory()->create()]), [

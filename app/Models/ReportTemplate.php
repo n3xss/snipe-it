@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Traits\UniqueUndeletedTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,36 +14,47 @@ class ReportTemplate extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use UniqueUndeletedTrait;
     use ValidatingTrait;
+
+    protected $table = 'report_templates';
 
     protected $casts = [
         'options' => 'array',
+        'is_shared' => 'boolean',
     ];
 
     protected $fillable = [
         'created_by',
         'name',
         'options',
+        'is_shared',
     ];
 
     protected $rules = [
         'name' => [
             'required',
             'string',
+            'unique_undeleted:report_templates,name',
         ],
         'options' => [
             'required',
             'array',
         ],
+        'is_shared' => [
+            'boolean',
+        ],
     ];
 
     protected static function booted()
     {
-        // Scope to current user
+        // Scope to current user or if template is shared
         static::addGlobalScope(
             'current_user', function (Builder $builder) {
+
                 if (auth()->check()) {
-                    $builder->where('created_by', auth()->id());
+                    $builder->where('created_by', auth()->id())
+                        ->orWhere('is_shared', 1);
                 }
             }
         );

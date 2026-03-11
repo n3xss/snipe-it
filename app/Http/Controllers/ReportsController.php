@@ -40,6 +40,7 @@ use League\Csv\EscapeFormula;
 use App\Http\Requests\CustomAssetReportRequest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\RedirectResponse;
+use function Livewire\before;
 
 /**
  * This controller handles all actions related to Reports for
@@ -453,6 +454,10 @@ class ReportsController extends Controller
 
             $header = [];
 
+            if($request->filled('is_shared')) {
+                $header[] = trans('admin/reports/general.share_template');
+            }
+
             if ($request->filled('id')) {
                 $header[] = trans('general.id');
             }
@@ -550,6 +555,10 @@ class ReportsController extends Controller
                 $header[] = 'Username';
             }
 
+            if ($request->filled('user_company')) {
+                $header[] = trans('admin/reports/general.custom_export.user_company');
+            }
+
             if ($request->filled('email')) {
                 $header[] = 'Email';
             }
@@ -594,6 +603,10 @@ class ReportsController extends Controller
                 $header[] = trans('admin/reports/general.custom_export.user_zip');
             }
 
+            if ($request->filled('target_notes')) {
+                $header[] = trans('admin/reports/general.custom_export.target_notes');
+            }
+            
             if ($request->filled('status')) {
                 $header[] = trans('general.status');
             }
@@ -651,7 +664,14 @@ class ReportsController extends Controller
             $executionTime = microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'];
             Log::debug('Added headers: '.$executionTime);
 
-            $assets = Asset::select('assets.*')->with(
+            if($request->filled('is_shared')) {
+                //to fill with logic for the report template and NOT the assets retrieved by the query
+                //do we scope here or??
+            }
+
+
+
+                $assets = Asset::select('assets.*')->with(
                 'location', 'assetstatus', 'company', 'defaultLoc', 'assignedTo',
                 'model.category', 'model.manufacturer', 'supplier');
             
@@ -758,9 +778,15 @@ class ReportsController extends Controller
                 $assets->whereBetween('assets.updated_at', [$request->input('last_updated_start'), $request->input('last_updated_end')]);
             }
 
+            if(($request->filled('last_updated_before'))){
+                $last_updated_window = Carbon::parse(today()->subDays($request->input('last_updated_before')));
+                $assets->where('assets.updated_at', '<' , $last_updated_window);
+            }
+
             if ($request->filled('exclude_archived')) {
                 $assets->notArchived();
             }
+
             if ($request->input('deleted_assets') == 'include_deleted') {
                 $assets->withTrashed();
             }
@@ -768,7 +794,6 @@ class ReportsController extends Controller
                 $assets->onlyTrashed();
             }
 
-            Log::debug($assets->toSql());
             $assets->orderBy('assets.id', 'ASC')->chunk(500, function ($assets) use ($handle, $customfields, $request) {
             
                 $executionTime = microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'];
@@ -887,6 +912,14 @@ class ReportsController extends Controller
                         }
                     }
 
+                    if ($request->filled('user_company')) {
+                        if ($asset->checkedOutToUser()) {
+                            $row[] = ($asset->assignedto->company) ? $asset->assignedto->company->display_name : '';
+                        } else {
+                            $row[] = ''; // Empty string if unassigned
+                        }
+                    }
+
                     if ($request->filled('email')) {
                         // Only works if we're checked out to a user, not anything else.
                         if ($asset->checkedOutToUser()) {
@@ -976,6 +1009,15 @@ class ReportsController extends Controller
                             $row[] = ''; // Empty string if unassigned
                         }
                     }
+
+                    if ($request->filled('target_notes')) {
+                        if ($asset->checkedOutToUser()) {
+                            $row[] = ($asset->assignedto) ? $asset->assignedto->notes : '';
+                        } else {
+                            $row[] = ''; // Empty string if unassigned
+                        }
+                    }
+
 
                     if ($request->filled('status')) {
                         $row[] = ($asset->assetstatus) ? $asset->assetstatus->name.' ('.$asset->present()->statusMeta.')' : '';
